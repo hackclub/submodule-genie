@@ -6,7 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 var (
@@ -32,8 +34,6 @@ var (
 )
 
 func main() {
-	var err error
-
 	flag.Parse()
 
 	pushChanges = exec.Command("git", "push", *remote, *branch)
@@ -43,17 +43,57 @@ func main() {
 
 	absDir, err := filepath.Abs(*dir)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Couldn't create an absolute filename", err)
 		return
 	}
 
-	fmt.Println("This is the updated absolute directory:", absDir)
+	err = runGit(absDir)
+	if err != nil {
+		fmt.Println("Couldn't finish the git operations:", err)
+		return
+	}
 
-	updateSubmodules.Dir = absDir
-	checkDiff.Dir = absDir
-	addChanges.Dir = absDir
-	commitChanges.Dir = absDir
-	pushChanges.Dir = absDir
+	err = makePR()
+	if err != nil {
+		fmt.Println("Couldn't make PR:", err)
+		return
+	}
+
+	fmt.Println("I've been waiting a while to say this: My work here... is done!")
+}
+
+func makePR() error {
+	pr := pullRequest{
+		Title: "Update submodules",
+		Body:  "Hey! I'm just your friendly neighbourhood bot, updating your submodules.",
+		Head:  fmt.Sprintf("%v:%v", *forkOwner, *branch),
+		Base:  *toBranch,
+	}
+
+	var buf bytes.Buffer
+
+	err := json.NewEncoder(&buf).Encode(pr)
+	if err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf("https://api.github.com/repos/%v/%v/pulls?access_token=%v", *owner, *repo, *token)
+	resp, err := http.Post(endpoint, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func runGit(dir string) error {
+	updateSubmodules.Dir = dir
+	checkDiff.Dir = dir
+	addChanges.Dir = dir
+	commitChanges.Dir = dir
+	pushChanges.Dir = dir
 
 	updateSubmodules.Stdin = os.Stdin
 	updateSubmodules.Stdout = os.Stdout
@@ -63,70 +103,38 @@ func main() {
 	pushChanges.Stdout = os.Stdout
 	pushChanges.Stderr = os.Stderr
 
-	err = updateSubmodules.Run()
+	err := updateSubmodules.Run()
 	if err != nil {
-		fmt.Println("Could not update submodules:", err)
-		return
+		return err
 	}
 
 	out, err := checkDiff.Output()
 	if err != nil {
-		fmt.Println("Could not check diff:", err)
-		return
+		return err
 	}
 
 	fmt.Printf("`%s`", out)
 
 	if string(out) == "" {
-		fmt.Println("No updates were made, exiting now")
-		return
+		return err
 	}
 
 	err = addChanges.Run()
 	if err != nil {
-		fmt.Println("Could not add changes:", err)
-		return
+		return err
 	}
 
 	err = commitChanges.Run()
 	if err != nil {
-		fmt.Println("Could not commit changes:", err)
-		return
+		return err
 	}
 
 	err = pushChanges.Run()
 	if err != nil {
-		fmt.Println("Could not push commit:", err)
-		return
+		return err
 	}
 
-	pr := pullRequest{
-		Title: "Update submodules",
-		Body:  "Hey! I'm just your friendly neighbourhood bot, updating your submodules.",
-		Head:  fmt.Sprintf("%v:%v", *forkOwner, *branch),
-		Base:  *toBranch,
-	}
-
-	fmt.Println(pr)
-
-	var buf bytes.Buffer
-
-	err = json.NewEncoder(&buf).Encode(pr)
-	if err != nil {
-		fmt.Println("Couldn't encode JSON:", err)
-		return
-	}
-
-	endpoint := fmt.Sprintf("https://api.github.com/repos/%v/%v/pulls?access_token=%v", *owner, *repo, *token)
-	resp, err := http.Post(endpoint, "application/json", &buf)
-	if err != nil {
-		fmt.Println("Couldn't create PR :", err)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	fmt.Println("I've been waiting a while to say this: My work here... is done!")
+	return nil
 }
 
 type pullRequest struct {

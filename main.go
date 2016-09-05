@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -20,22 +21,26 @@ var (
 	forkOwner = flag.String("fork-owner", "", "The owner of the repository the Pull Request will be sent from")
 	forkRepo  = flag.String("fork-repo", "", "The repository the Pull Request will be sent from of")
 
-	owner    = flag.String("owner", "", "The owner of the repository which the Pull Request will be sent to")
-	repo     = flag.String("repo", "", "The repository which the Pull Request will be sent to")
+	owner = flag.String("owner", "", "The owner of the repository which the Pull Request will be sent to")
+	repo  = flag.String("repo", "", "The repository which the Pull Request will be sent to")
+
+	upstream = flag.String("upstream", "upstream", "The remote of the git repository which you want to merge to")
 	toBranch = flag.String("to-branch", "master", "The branch which you would like your changes merged into")
 
 	token = flag.String("token", "", "The API token which has access to both the fork and main repositories")
 
+	pullUpstream     *exec.Cmd // pullUpstream is set later as it relies on flags. In the form: `git pull <upstream> <to-branch>`
 	updateSubmodules = exec.Command("git", "submodule", "update", "--remote", "--merge")
 	checkDiff        = exec.Command("git", "status", "--porcelain")
 	addChanges       = exec.Command("git", "add", "-A")
 	commitChanges    = exec.Command("git", "commit", "-m Update submodules")
-	pushChanges      *exec.Cmd // pushChanges is set later as it relies on the remote and branch flags. In the form: `git push <remote> <branch>`
+	pushChanges      *exec.Cmd // pushChanges is set later as it relies on flags. In the form: `git push <remote> <branch>`
 )
 
 func main() {
 	flag.Parse()
 
+	pullUpstream = exec.Command("git", "pull", *upstream, *toBranch)
 	pushChanges = exec.Command("git", "push", *remote, *branch)
 
 	fmt.Println("Welcome... To the submodule genie!")
@@ -89,11 +94,16 @@ func makePR() error {
 }
 
 func runGit(dir string) error {
+	pullUpstream.Dir = dir
 	updateSubmodules.Dir = dir
 	checkDiff.Dir = dir
 	addChanges.Dir = dir
 	commitChanges.Dir = dir
 	pushChanges.Dir = dir
+
+	pullUpstream.Stdin = os.Stdin
+	pullUpstream.Stdout = os.Stdout
+	pullUpstream.Stderr = os.Stderr
 
 	updateSubmodules.Stdin = os.Stdin
 	updateSubmodules.Stdout = os.Stdout
@@ -103,7 +113,12 @@ func runGit(dir string) error {
 	pushChanges.Stdout = os.Stdout
 	pushChanges.Stderr = os.Stderr
 
-	err := updateSubmodules.Run()
+	err := pullUpstream.Run()
+	if err != nil {
+		return err
+	}
+
+	err = updateSubmodules.Run()
 	if err != nil {
 		return err
 	}
@@ -113,10 +128,8 @@ func runGit(dir string) error {
 		return err
 	}
 
-	fmt.Printf("`%s`", out)
-
 	if string(out) == "" {
-		return err
+		return errors.New("No submodules needed to be updated")
 	}
 
 	err = addChanges.Run()

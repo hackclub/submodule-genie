@@ -7,8 +7,8 @@ RUN apt-get update && apt-get install -y cron ssh
 ADD . /go/src/github.com/hackclub/submodule-genie
 RUN go install github.com/hackclub/submodule-genie
 
-ADD ./scripts/cron-update-submodules.sh /cron-update-submodules.sh
-RUN chmod 777 /cron-update-submodules.sh
+ADD ./scripts/cron-update-submodules.sh /etc/cron.daily/update-submodules.sh
+RUN chmod 777 /etc/cron.daily/update-submodules.sh
 
 # Environment variables used by the cron-update-submodules.sh script
 ENV SG_DIRECTORY /lecture-hall
@@ -39,4 +39,4 @@ RUN git clone ${SG_FORK_GIT_REPO} ${SG_DIRECTORY}
 RUN git submodule init
 RUN git submodule update --depth 50 
 
-ENTRYPOINT /cron-update-submodules.sh
+ENTRYPOINT cron -e

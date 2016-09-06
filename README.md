@@ -1,5 +1,40 @@
 # Submodule Genie
 
-This is a small little script which will make sure that a given repositories submodules are always up to date!
+This is a small little script which will make sure that a given repositories
+submodules are always up to date!
 
-*Documentation and usage guides coming to a README near you... soon*
+## Usage
+
+You can run `submodule-genie` in two ways, as a regular binary or in a Docker
+container.
+
+### Configuration
+
+| Docker Env | CLI Flag | Purpose |
+|------------|----------|---------|
+| `SG_DIRECTORY` | `--directory`   | The directory which the git repository should be cloned into, or where it is already located |
+| `SG_REMOTE` | `--remote`  | The remote of the local repository which you want to use for pushing and pulling |
+| `SG_BRANCH` | `--branch`  | The remote of `$SG_REMOTE` which you want to use for pushing and pulling |
+| `SG_FORK_OWNER` | `--fork-owner`  | The username of a GitHub user which has write access on `$SG_FORK_REPO`, and will be used to send Pull Requests` |
+| `SG_FORK_REPO` | `--fork-repo`  | The repository name of the GitHub repository which will be used to send Pull Requests from |
+| `SG_FORK_GIT_REPO` | Not needed  | The git URL of the repository which will be used to send Pull Requests from |
+| `SG_OWNER` | `--owner` | The owner of the repository which Pull Requests will be sent to |
+| `SG_REPO` | `--repo` | The name of the repository which will be sent to |
+| `SG_UPSTREAM_REMOTE` | `--upstream` | The remote of the repository which you want to send Pull Requests to |
+| `SG_UPSTREAM_BRANCH` | `--to-branch` | The branch of the repository which you want to send Pull Requests to |
+| `SG_TOKEN` | `--token` | A GitHub authentication which has access to the `repo` scope and belongs (usually) to `$FORK_OWNER`. [You can create them here](https://github.com/settings/tokens) |
+
+It's handy to note that remotes can be provided as URLs, without them being previously added to the repository. For example, `git@github.com:hackclub/lecture-hall` instead of `upstream`.
+
+### Extra information for Docker
+
+The Dockerfile is set up with a cron job that will run the `submodule-genie`
+command once a day. So that git will be able to push and pull from inside the
+container, **you will need a set of ssh keys in the `.ssh/` folder** named `id_rsa`
+and `id_rsa.pub` respectively. These need to be set up with the GitHub account
+you will be sending Pull Requests from.
+
+These are the commands which I have been using to build and run the container:
+
+- `docker build -t genie .`
+- `docker run --name submodule-genie --rm genie`

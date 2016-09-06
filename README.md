@@ -26,7 +26,29 @@ container.
 
 It's handy to note that remotes can be provided as URLs, without them being previously added to the repository. For example, `git@github.com:hackclub/lecture-hall` instead of `upstream`.
 
-### Extra information for Docker
+### Running the binary
+
+If you choose to run `submodule-genie` through its binary form, you will need to
+take care of managing ssh keys and scheduling yourself.
+
+The following is a generic example of the usage of the command, from the
+perspective of GitHub user @paked, who wants to keep the submodules of Hack
+Club's `lecture-hall` repository up to date.
+
+```
+submodule-genie --directory /lecture-hall \
+    --remote origin \
+    --branch master \
+    --fork-owner paked \
+    --fork-repo lecture-hall \
+    --owner hackclub \
+    --repo lecture-hall \
+    --upstream git@github.com:hackclub/lecture-hall \
+    --to-branch master \
+    --token <github-auth-token-here>
+```
+
+### Running with Docker
 
 The Dockerfile is set up with a cron job that will run the `submodule-genie`
 command once a day. So that git will be able to push and pull from inside the

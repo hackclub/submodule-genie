@@ -7,4 +7,5 @@ submodule-genie --directory $SG_DIRECTORY \
     --repo $SG_REPO \
     --upstream $SG_UPSTREAM_REMOTE \
     --to-branch $SG_UPSTREAM_BRANCH \
+    --submodules $SG_SUBMODULES \
     --token $SG_TOKEN

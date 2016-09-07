@@ -29,8 +29,10 @@ var (
 
 	token = flag.String("token", "", "The API token which has access to both the fork and main repositories")
 
+	submodules = flag.String("submodules", "", "The submodules which need to be updated, named by path and separated by a space. Leaving blank will update everything.")
+
 	pullUpstream     *exec.Cmd // pullUpstream is set later as it relies on flags. In the form: `git pull <upstream> <to-branch>`
-	updateSubmodules = exec.Command("git", "submodule", "update", "--remote", "--merge")
+	updateSubmodules *exec.Cmd // updateSubmodules is set later as it relies on a flag. It takes the form: `git submodule update --remote --merge <submodules>//= exec.Command("git", "submodule", "update", "--remote", "--merge")
 	checkDiff        = exec.Command("git", "status", "--porcelain")
 	addChanges       = exec.Command("git", "add", "-A")
 	commitChanges    = exec.Command("git", "commit", "-m Update submodules")
@@ -42,6 +44,7 @@ func main() {
 
 	pullUpstream = exec.Command("git", "pull", *upstream, *toBranch)
 	pushChanges = exec.Command("git", "push", *remote, *branch)
+	updateSubmodules = exec.Command("git", "submodule", "update", "--remote", "--merge", *submodules)
 
 	fmt.Println("Welcome... To the submodule genie!")
 	fmt.Println("I'm going to update the submodules of the repository in the directory", *dir)

@@ -23,6 +23,7 @@ container.
 | `SG_UPSTREAM_REMOTE` | `--upstream` | The remote of the repository which you want to send Pull Requests to |
 | `SG_UPSTREAM_BRANCH` | `--to-branch` | The branch of the repository which you want to send Pull Requests to |
 | `SG_TOKEN` | `--token` | A GitHub authentication which has access to the `repo` scope and belongs (usually) to `$FORK_OWNER`. [You can create them here](https://github.com/settings/tokens) |
+| `SG_SUBMODULES` | `--submodules` | The paths of the submodules (relative to `$SG_DIRECTORY`) which you want to update, if multple separate them with a space |
 
 It's handy to note that remotes can be provided as URLs, without them being previously added to the repository. For example, `git@github.com:hackclub/lecture-hall` instead of `upstream`.
 
@@ -45,6 +46,7 @@ submodule-genie --directory /lecture-hall \
     --repo lecture-hall \
     --upstream git@github.com:hackclub/lecture-hall \
     --to-branch master \
+    --submodules vendor/hackclub \
     --token <github-auth-token-here>
 ```
 

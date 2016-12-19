@@ -21,8 +21,9 @@ ENV SG_OWNER hackclub
 ENV SG_REPO lecture-hall
 ENV SG_UPSTREAM_REMOTE git@github.com:hackclub/lecture-hall.git
 ENV SG_UPSTREAM_BRANCH master
-ENV SG_TOKEN <put your token here>
+ENV SG_TOKEN <something>
 # Set SG_TOKEN while `docker run`ing
+ENV SG_SUBMODULES vendor/hackclub
 
 # Setup SSH keys
 ENV HOME /root
@@ -37,6 +38,6 @@ WORKDIR ${SG_DIRECTORY}
 # Clone fork repo
 RUN git clone ${SG_FORK_GIT_REPO} ${SG_DIRECTORY}
 RUN git submodule init
-RUN git submodule update --depth 50 
+RUN git submodule update --depth 50
 
 ENTRYPOINT cron -e

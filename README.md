@@ -1,4 +1,6 @@
-# Submodule Genie
+# [DEPRECATED] Submodule Genie
+
+**[This behaviour has been made part of Hackbot's `update-workshops` command](https://github.com/hackclub/api/blob/master/app/models/hackbot/interactions/update_workshops.rb)
 
 This is a small little script which will make sure that a given repositories
 submodules are always up to date!
